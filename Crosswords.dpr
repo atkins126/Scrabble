@@ -1,4 +1,4 @@
-program Scrabble;
+program Crosswords;
 
 {$R *.dres}
 
@@ -7,9 +7,11 @@ uses
   Vcl.Themes,
   Vcl.Styles,
   UVars in 'UVars.pas',
+  UDictionary in 'UDictionary.pas',
   ULanguage in 'ULanguage.pas',
   UClient in 'UClient.pas',
   UMatrix in 'UMatrix.pas',
+  URichEditUnicode in 'URichEditUnicode.pas',
   UDMClient in 'UDMClient.pas' {DMClient: TDataModule},
   UDMServer in 'UDMServer.pas' {DMServer: TDataModule},
   UFrmMain in 'UFrmMain.pas' {FrmMain},
@@ -18,8 +20,7 @@ uses
   UFrmLog in 'UFrmLog.pas' {FrmLog},
   UFrmSettings in 'UFrmSettings.pas' {FrmSettings},
   UFrmRules in 'UFrmRules.pas' {FrmRules},
-  UFrmDrop in 'UFrmDrop.pas' {FrmDrop},
-  URichEditUnicode in 'URichEditUnicode.pas';
+  UFrmDrop in 'UFrmDrop.pas' {FrmDrop};
 
 {$R *.res}
 

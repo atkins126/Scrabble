@@ -20,15 +20,19 @@ type
 
     constructor Create;
 
-    procedure RandomizeInitialLetters;
+    procedure RandomizeLetters(ChangeAll: Boolean);
     procedure ResetGameData;
   end;
 
-  TPlayersList = class(TObjectList<TClient>);
+  TPlayersList = class(TObjectList<TClient>)
+  public
+    procedure RandomList;
+  end;
 
 implementation
 
-uses UVars, System.SysUtils, UDMServer;
+uses UVars, UDictionary, UDMServer, System.SysUtils,
+  System.Generics.Defaults;
 
 constructor TClient.Create;
 var
@@ -41,14 +45,17 @@ begin
   Hash := TmpHash;
 end;
 
-procedure TClient.RandomizeInitialLetters;
+procedure TClient.RandomizeLetters(ChangeAll: Boolean);
 var
   I: Integer;
 begin
-  if not Letters.IsEmpty then
-    raise Exception.Create('Internal: Player letters should be empty');
+  if (not ChangeAll) and (Letters.Length = pubServerProps.HandLetters) then
+    raise Exception.Create('Internal: Cannot randomize letters without change all when hand is full');
 
-  for I := 1 to pubServerProps.InitialLetters do
+  if ChangeAll then
+    Letters := string.Empty;
+
+  for I := Letters.Length+1 to pubServerProps.HandLetters do
     Letters := Letters + GetRandomLetter;
 end;
 
@@ -57,6 +64,18 @@ begin
   Letters := string.Empty;
   Score := 0;
   Agree := False;
+end;
+
+//
+
+procedure TPlayersList.RandomList;
+begin
+  Sort(TComparer<TClient>.Construct(
+    function(const L, R: TClient): Integer
+    begin
+      Result := Random(3)-1; //-1 or 0 or 1
+    end
+  ));
 end;
 
 end.

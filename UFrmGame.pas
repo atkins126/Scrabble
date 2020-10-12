@@ -8,10 +8,12 @@ uses Vcl.Forms, System.ImageList, Vcl.ImgList, Vcl.Controls, Vcl.StdCtrls,
   System.Types, URichEditUnicode, UMatrix;
 
 type
-  TGameStatus = (gsUnknown, gsPreparing, gsPlaying, gsMyTurn, gsAgreement, gsGameOver);
+  TGameStatus = (
+    gsUnknown, gsPreparing,
+    gsPlaying, gsMyTurn, gsWaitValid, gsAgreement, gsContest,
+    gsPaused, gsGameOver);
 
   TFrmGame = class(TForm)
-    SB: TScrollBox;
     BoxSide: TPanel;
     BoxChat: TPanel;
     EdChatLog: TRichEdit;
@@ -20,7 +22,6 @@ type
     LLetters: TListBox;
     BoxOperations: TPanel;
     BtnStartGame: TBitBtn;
-    LbPlayers: TLabel;
     LbLetters: TLabel;
     LbChat: TLabel;
     IL: TImageList;
@@ -29,6 +30,17 @@ type
     BtnDisagree: TBitBtn;
     BtnRules: TBitBtn;
     BtnRestart: TBitBtn;
+    BoxGrid: TPanel;
+    SB: TScrollBox;
+    LbPosition: TLabel;
+    BoxStatus: TPanel;
+    BoxHeaderPlayers: TPanel;
+    LbHeaderPlayer: TLabel;
+    LbHeaderScore: TLabel;
+    BtnContestAccept: TBitBtn;
+    BtnContestReject: TBitBtn;
+    Timer: TTimer;
+    LbTimer: TLabel;
     procedure EdChatMsgKeyPress(Sender: TObject; var Key: Char);
     procedure BtnStartGameClick(Sender: TObject);
     procedure LPlayersDrawItem(Control: TWinControl; Index: Integer;
@@ -41,23 +53,38 @@ type
     procedure BtnDisagreeClick(Sender: TObject);
     procedure BtnRulesClick(Sender: TObject);
     procedure BtnRestartClick(Sender: TObject);
+    procedure BtnContestAcceptClick(Sender: TObject);
+    procedure BtnContestRejectClick(Sender: TObject);
+    procedure TimerTimer(Sender: TObject);
   public
     Status: TGameStatus;
     PB: TMatrixImage;
 
-    procedure InitTranslation;
-    procedure Initialize;
+    procedure Initialize(Reconnected: Boolean);
     procedure MatrixReceived(const A: string);
-    procedure ChatLog(const Player, Text: string);
+    procedure ChatLog(const Player, Text: string; Other: Boolean);
     procedure GameStartedReceived;
     procedure InitMyTurn;
+    procedure MyTurnTimeoutReceived;
+    procedure WaitValidationReceived;
+    procedure ValidationAcceptedReceived;
+    procedure ValidationRejectedReceived;
     procedure AgreementRequestReceived;
     procedure AgreementFinishReceived(const A: string);
-    procedure DisagreeReceived;
+    procedure OpenContestPeriodReceived;
     procedure ReceivedPausedByDrop;
+    procedure ReceivedDropContinue;
     procedure GameOverReceived;
     procedure ReceivedPreparingNewGame;
+    procedure ReceivedTimerStart(const A: string);
+    procedure ReceivedTimerStop;
+    procedure ReceivedAutoRejectedByInvalidLetters;
+    procedure ReceivedContestResponse(const A: string);
+    procedure LettersExchangedReceived;
   private
+    TimerSeconds: Integer;
+
+    procedure InitTranslation;
     procedure SetStatus(NewStatus: TGameStatus);
   end;
 
@@ -76,15 +103,15 @@ uses System.SysUtils,
 
 procedure TFrmGame.FormCreate(Sender: TObject);
 begin
-  InitTranslation;
-
   PB := TMatrixImage.Create(Self);
   PB.Parent := SB;
 end;
 
 procedure TFrmGame.InitTranslation;
 begin
-  LbPlayers.Caption := Lang.Get('GAME_BOX_PLAYERS');
+  LbHeaderPlayer.Caption := Lang.Get('GAME_HEADER_PLAYER');
+  LbHeaderScore.Caption := Lang.Get('GAME_HEADER_SCORE');
+
   LbLetters.Caption := Lang.Get('GAME_BOX_LETTERS');
   LbChat.Caption := Lang.Get('GAME_BOX_CHAT');
 
@@ -94,18 +121,35 @@ begin
   BtnDone.Caption := Lang.Get('GAME_BTN_DONE');
   BtnAgree.Caption := Lang.Get('GAME_BTN_AGREE');
   BtnDisagree.Caption := Lang.Get('GAME_BTN_DISAGREE');
+  BtnContestAccept.Caption := Lang.Get('GAME_BTN_CONTEST_ACCEPT');
+  BtnContestReject.Caption := Lang.Get('GAME_BTN_CONTEST_REJECT');
 end;
 
-procedure TFrmGame.Initialize;
+procedure TFrmGame.Initialize(Reconnected: Boolean);
 begin
-  SetStatus(gsPreparing);
+  InitTranslation;
+
+  if Reconnected then
+    SetStatus(gsPaused)
+  else
+    SetStatus(gsPreparing);
 
   PB.SetMatrixSize(0, 0);
   LPlayers.Clear;
   LLetters.Clear;
+
+  LbPosition.Caption := string.Empty;
+  LbTimer.Caption := string.Empty;
 end;
 
 procedure TFrmGame.SetStatus(NewStatus: TGameStatus);
+
+ procedure SetStatusLabel(const LangIdentSufix: string; Color: TColor);
+ begin
+   BoxStatus.Caption := Lang.Get('GAME_STATUS_'+LangIdentSufix);
+   BoxStatus.Color := Color;
+ end;
+
 begin
   Status := NewStatus;
 
@@ -117,7 +161,28 @@ begin
   BtnAgree.Visible := (Status = gsAgreement);
   BtnDisagree.Visible := (Status = gsAgreement);
 
+  BtnContestAccept.Visible := (Status = gsContest);
+  BtnContestReject.Visible := (Status = gsContest);
+
   BtnRestart.Visible := (Status = gsGameOver) and pubModeServer;
+  FrmMain.BtnRestart.Visible := pubModeServer;
+
+  case Status of
+    gsUnknown:
+      begin
+         BoxStatus.Caption := string.Empty;
+         BoxStatus.Color := clBtnFace;
+      end;
+    gsPreparing: SetStatusLabel('PREPARING', clPurple);
+    gsPlaying: SetStatusLabel('PLAYING', clBlack);
+    gsMyTurn: SetStatusLabel('MYTURN', clGreen);
+    gsWaitValid: SetStatusLabel('WAITVALID', clWebBrown);
+    gsAgreement: SetStatusLabel('AGREEMENT', clBlue);
+    gsContest: SetStatusLabel('CONTEST', $00656225);
+    gsPaused: SetStatusLabel('PAUSED', $005B5B5B);
+    gsGameOver: SetStatusLabel('GAMEOVER', $002C075C);
+    else raise Exception.Create('Internal: Unsupported status');
+  end;
 end;
 
 procedure TFrmGame.MatrixReceived(const A: string);
@@ -125,9 +190,13 @@ begin
   PB.UpdateData(A);
 end;
 
-procedure TFrmGame.ChatLog(const Player, Text: string);
+procedure TFrmGame.ChatLog(const Player, Text: string; Other: Boolean);
+var
+  Color: TColor;
 begin
-  RichEditIncLogLine(EdChatLog, Player+': ', Text, clGray, clLime);
+  if Other then Color := clLime else Color := $000080FF;
+
+  RichEditIncLogLine(EdChatLog, Player+': ', Text, clGray, Color);
 end;
 
 procedure TFrmGame.EdChatMsgKeyPress(Sender: TObject; var Key: Char);
@@ -142,7 +211,7 @@ begin
     if not (LPlayers.Count>1) then
       MsgRaise(Lang.Get('GAME_MSG_CHAT_WITH_NOBODY'));
 
-    ChatLog(pubPlayerName, EdChatMsg.Text);
+    ChatLog(pubPlayerName, EdChatMsg.Text, False);
     DMClient.C.Send('M', EdChatMsg.Text);
     EdChatMsg.Clear;
   end;
@@ -165,18 +234,17 @@ begin
 
   D := DataToArray(LPlayers.Items[Index]);
 
-  LPlayers.Canvas.TextOut(25, Rect.Top+2, D[0]); //player name
-  TextRight(200, Rect.Top+2, D[1]); //letters
-  TextRight(236, Rect.Top+2, D[2]); //score
+  LPlayers.Canvas.TextOut(LbHeaderPlayer.Left, Rect.Top+2, D[0]); //player name
+  TextRight(LbHeaderScore.Left+LbHeaderScore.Width, Rect.Top+2, D[1]); //score
 
-  if D[3] then
+  if D[2] then
     IL.Draw(LPlayers.Canvas, 3, Rect.Top+1, 0); //this player turn
 
-  if D[4] then
+  if D[3] then
     IL.Draw(LPlayers.Canvas, 3, Rect.Top+1, 1); //agree
 
-  if D[5] then
-    IL.Draw(LPlayers.Canvas, 160, Rect.Top+1, 2); //disconnected
+  if D[4] then
+    IL.Draw(LPlayers.Canvas, LbHeaderScore.Left-25, Rect.Top+1, 2); //disconnected
 end;
 
 procedure TFrmGame.LLettersDrawItem(Control: TWinControl; Index: Integer;
@@ -229,12 +297,27 @@ begin
   Log(Lang.Get('LOG_DISAGREE_SENT'));
 end;
 
+procedure TFrmGame.BtnContestAcceptClick(Sender: TObject);
+begin
+  SetStatus(gsPlaying);
+  DMClient.SendContest(True);
+
+  Log(Lang.Get('LOG_CONTEST_ACCEPT_SENT'));
+end;
+
+procedure TFrmGame.BtnContestRejectClick(Sender: TObject);
+begin
+  SetStatus(gsPlaying);
+  DMClient.SendContest(False);
+
+  Log(Lang.Get('LOG_CONTEST_REJECT_SENT'));
+end;
+
 procedure TFrmGame.GameStartedReceived;
 begin
   SetStatus(gsPlaying);
 
   Log(Lang.Get('LOG_GAME_STARTED'));
-  DoSound('START');
 end;
 
 procedure TFrmGame.InitMyTurn;
@@ -243,6 +326,47 @@ begin
 
   Log(Lang.Get('LOG_YOUR_TURN'));
   DoSound('BELL');
+end;
+
+procedure TFrmGame.MyTurnTimeoutReceived;
+begin
+  SetStatus(gsPlaying);
+
+  Log(Lang.Get('LOG_TURN_TIMEOUT'));
+  DoSound('TIMEOUT');
+end;
+
+procedure TFrmGame.LettersExchangedReceived;
+begin
+  Log(Lang.Get('LOG_LETTERS_EXCHANGED'));
+end;
+
+procedure TFrmGame.ReceivedAutoRejectedByInvalidLetters;
+begin
+  Log(Lang.Get('LOG_AUTO_REJECTED_BY_INVALID_LETTERS'));
+end;
+
+procedure TFrmGame.WaitValidationReceived;
+begin
+  SetStatus(gsWaitValid);
+
+  Log(Lang.Get('LOG_WAIT_VALIDATION'));
+end;
+
+procedure TFrmGame.ValidationAcceptedReceived;
+begin
+  SetStatus(gsPlaying);
+
+  Log(Lang.Get('LOG_WORDS_ACCEPTED'));
+  DoSound('DONE');
+end;
+
+procedure TFrmGame.ValidationRejectedReceived;
+begin
+  SetStatus(gsMyTurn);
+
+  Log(Lang.Get('LOG_DISAGREE_RECEIVED'));
+  DoSound('REJECT');
 end;
 
 procedure TFrmGame.AgreementRequestReceived;
@@ -264,19 +388,34 @@ begin
   DoSound('AGREEMENT_END');
 end;
 
-procedure TFrmGame.DisagreeReceived;
+procedure TFrmGame.OpenContestPeriodReceived;
 begin
-  SetStatus(gsMyTurn);
+  SetStatus(gsContest);
 
-  Log(Lang.Get('LOG_DISAGREE_RECEIVED'));
-  DoSound('REJECT');
+  Log(Lang.Get('LOG_CONTEST_PERIOD_START'));
+  DoSound('CONTEST');
+end;
+
+procedure TFrmGame.ReceivedContestResponse(const A: string);
+begin
+  if DataToArray(A)[0]{Accept} then
+    Log(Lang.Get('LOG_RECEIVED_CONTEST_RESPONSE_ACCEPT'))
+  else
+    Log(Lang.Get('LOG_RECEIVED_CONTEST_RESPONSE_REJECT'));
 end;
 
 procedure TFrmGame.ReceivedPausedByDrop;
 begin
-  SetStatus(gsPlaying);
+  SetStatus(gsPaused);
 
   Log(Lang.Get('LOG_PAUSE_BY_DROP'));
+end;
+
+procedure TFrmGame.ReceivedDropContinue;
+begin
+  SetStatus(gsPlaying);
+
+  Log(Lang.Get('LOG_DROP_CONTINUE'))
 end;
 
 procedure TFrmGame.GameOverReceived;
@@ -291,6 +430,30 @@ begin
   SetStatus(gsPreparing);
 
   Log(Lang.Get('LOG_RESTART_GAME'));
+end;
+
+procedure TFrmGame.ReceivedTimerStart(const A: string);
+begin
+  TimerSeconds := A.ToInteger;
+  TimerTimer(nil);
+  Timer.Enabled := True;
+end;
+
+procedure TFrmGame.ReceivedTimerStop;
+begin
+  Timer.Enabled := False;
+  LbTimer.Caption := string.Empty;
+end;
+
+procedure TFrmGame.TimerTimer(Sender: TObject);
+begin
+  LbTimer.Caption := Format(Lang.Get('GAME_TIMER'), [TimerSeconds]);
+  if TimerSeconds=0 then
+  begin
+    Timer.Enabled := False;
+    Exit;
+  end;
+  Dec(TimerSeconds);
 end;
 
 end.

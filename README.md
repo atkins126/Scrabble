@@ -1,6 +1,8 @@
-# Scrabble
+# Crosswords
 
-## Delphi Client/Server Scrabble Game using Socket communication
+## Delphi Client/Server Crosswords Game using Socket communication
+
+[Download alpha version](https://github.com/digao-dalpiaz/Crosswords/releases)
 
 ### Demo Screens
 
@@ -32,21 +34,33 @@ You can play with as many opponents as you like.
 Choose one to be the server, and the rest will be the clients that will connect to the server.
 On the server, remember to allow incoming connections to the Windows firewall (usually the first time the game is opened in server mode, Windows itself will ask if you want to open the game port for external access).
 The server can define the rules of the game, while waiting for all players to connect.
+
+> Remember to set the correct dictionary in Game Rules (this is not the game language, but the dictionary to get random letters).
+
 When all players are connected, the server can start the game.
 You can chat to all players at any time using side panel.
 
 Each player has his turn, in sequential order, indicated on the side panel.
 All players will initially receive the same amount of letters.
 The idea is to build words, using as many letters as possible.
-The game ends when a player has no letters left.
-Each time you complete your move, all other players must accept the words you entered. If any player does not accept, you will have to review your move. You can use chat to argue.
-If you are unable to form a word in a move, you will automatically receive more letters in your pot.
-**A move can only be completed when all words entered are complete and valid.**
+The game ends when a player reaches the score defined in the rules (goal letters).
+Each time you complete your move, all other players must accept the words you entered. If any player does not accept, your move will be disregarded. You can use chat to argue.
+
+At the end of each move, your letters will always be completed to maintain the same amount. If you don't use any letters in a move, all your letters will be exchanged.
+
+**A move can only be completed when all words entered are valid.**
+*Players must define with each other before starting the game what kind of words will be accepted. Normally, only words in the dictionary are accepted.*
+
+### Player turn logic diagram
+
+![Player turn diagram](Images/diagram.png)
 
 ### Supported languages
 
 - English
 - Portuguese Brazil
+
+> There is a folder containing translation files (.lang). You can send me a new language translation if you like.
 
 ### Supported letters dictionaries
 
@@ -54,9 +68,9 @@ For now, the game supports letters in:
 - English
 - Portuguese Brazil
 
-For each language, there is a dictionary resource file, which basically indicates all the letters of the alphabet supported and how many times each occurs.
+*For each language, there is a dictionary resource file, which basically indicates all the letters of the alphabet supported and how many times each occurs.*
 
-> You can send me a dictionary in the desired language, and so we will increase support for new dictionaries.
+> There is a folder containing dictionary files (.dic). You can send me a dictionary in the desired language.
 
 ### Required components:
 
@@ -81,13 +95,13 @@ The server works on Port TCP 6631.
 - ~~Review random letters logic~~
 - ~~Include English dictionary~~
 - ~~App translation to Portuguese Brazil and support any language translation~~
-- Review game rules
+- ~~Review game rules~~
 - ~~Behavior when user drop connection when the game is running~~
 - ~~Password to connect~~
 - ~~Allow server change settings while waiting players~~
 - ~~Implement end of game~~
 - ~~Logic to check if inserted letters is according with game rules~~
-- Better way to show that it's your turn?
+- ~~Better way to show that it's your turn~~
 - ~~Zoom function in game grid~~
-- Time-out rule to a player turn?
+- ~~Time-out rule to a player turn~~
 - ~~If language changed during game, the rules info in title bar remains in previous language~~

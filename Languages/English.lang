@@ -2,38 +2,42 @@ TITLE_VERSION=Version %s
 TITLE_MODE=Mode:
 TITLE_PLAYER=Player:
 TITLE_RULES=Rules:
+TITLE_RESTART=Restart
 
 MODE_SERVER=Server
 MODE_CLIENT=Client
 
-TITLE_RULES_DEFINITION=Dictionary: %s / Size: %d x %d / Init. Letters: %d / Rebuy: %d
+TITLE_RULES_DEFINITION=Dictionary: %s / Size: %d x %d / Letters: %d / Goal: %d / Time: %d+%d sec
 
 DLG_OK=OK
 DLG_CANCEL=Cancel
 
 MSG_CLOSE_APP=<b><fc:clRed>There is a connection established.</fc></b><br><br>Are you sure you want to leave?
 MSG_KILL_PLAYER=Are you sure you want to delete the selected player?
+MSG_STOP_GAME=<b>Are you sure you want to stop the game?</b>
+MSG_RESTART_GAME=<b>Are you sure you want to restart the game?</b>
 
 CONN_REJECT_VERSION_WRONG=This version is incompatible with the server!
 CONN_REJECT_PASSWORD_WRONG=The password to this game is incorrect.
+CONN_REJECT_NOT_FREEZED=The game is not in the status of waiting for reconnections.
 CONN_REJECT_HASH_WRONG=Your player was not found by this hash code.
 CONN_REJECT_ALREADY_CONNECTED=There is an existing connection for this player already.
 CONN_REJECT_ALREADY_RUNNING=You cannot join the game because it is already running!
 CONN_REJECT_ALREADY_PLAYER_NAME=This player name already exists!
 
 SETTINGS_CAPTION=Settings
-SETTINGS_LANGUAGE=Language:
 SETTINGS_SOUNDS=Enable Sounds
 SETTINGS_ZOOM=Grid zoom:
 SETTINGS_LOG_FONT_SIZE=Log font size:
 
-START_CAPTION=Welcome to Scrabble
+START_CAPTION=Welcome to Crosswords
 START_NAME=Your name:
 START_HASH=Hash:
 START_OPERATION=Operation mode
 START_RECONNECT=Reconnect
 START_SERVER_ADDR=Server address:
 START_CONN_PASSWORD=Connection password:
+START_LANGUAGE=Language:
 
 START_MSG_BLANK_NAME=Please, type your name.
 START_MSG_BLANK_HASH=Please, type the hash code for reconnection.
@@ -49,10 +53,11 @@ LOG_LOGIN_ACCEPTED=Login accepted.
 LOG_LOGIN_REJECTED=Login rejected: %s
 LOG_PREPARING_GAME_SERVER=Please, wait for all players to connect and then click "Start Game".
 LOG_PREPARING_GAME_CLIENT=Please, wait while server is starting the game. In the meantime you can use chat.
+LOG_RECONECTED_GAME_CLIENT=You have returned to the game. Wait for the server to continue.
 LOG_PLAYER_JOIN=Player %s just joined.
 LOG_PLAYER_LEFT=Player %s left.
 LOG_WAIT_VALIDATION=Please, wait while your opponents validate your words.
-LOG_REBUY=You bought %d more letter(s) since you didn't fill anything in this round.
+LOG_LETTERS_EXCHANGED=Your letters have all been exchanged since you haven't filled anything in this round.
 LOG_WORDS_ACCEPTED=Your words were accepted and your turn to play is over.
 LOG_RULES_CHANGED=The game rules have been changed by the server.
 
@@ -62,9 +67,21 @@ LOG_DROP_CONTINUE=The situation of the lost players has been resolved and the ga
 START_BTN_JOIN=Join
 START_BTN_EXIT=Exit
 
-GAME_BOX_PLAYERS=Players
+GAME_STATUS_PREPARING=Waiting room
+GAME_STATUS_PLAYING=Game running
+GAME_STATUS_MYTURN=Your turn
+GAME_STATUS_WAITVALID=Waiting validation
+GAME_STATUS_AGREEMENT=Agreement period
+GAME_STATUS_CONTEST=Contest period
+GAME_STATUS_PAUSED=Game paused
+GAME_STATUS_GAMEOVER=Game over
+
+GAME_GRID_POSITION=Line %d / Column %d
+GAME_HEADER_PLAYER=Player
+GAME_HEADER_SCORE=Score
 GAME_BOX_LETTERS=Letters
 GAME_BOX_CHAT=Chat
+GAME_TIMER=Time left: %d second(s)
 
 GAME_BTN_RESTART=New Game 
 GAME_BTN_START=Start Game
@@ -72,26 +89,38 @@ GAME_BTN_RULES=Game Rules
 GAME_BTN_DONE=Done
 GAME_BTN_AGREE=I agree
 GAME_BTN_DISAGREE=I disagree
+GAME_BTN_CONTEST_ACCEPT=Accept
+GAME_BTN_CONTEST_REJECT=Contest
 
 GAME_MSG_START_WITH_NOBODY=We need at least two players to start the game!
 GAME_MSG_CHAT_WITH_NOBODY=There are no other players to chat with.
 
 LOG_GAME_STARTED=Get ready. Starting the game right now!
 LOG_YOUR_TURN=Go, it's your turn!
+LOG_TURN_TIMEOUT=Your time is up.
 LOG_AGREE_SENT=You have sent an agreement for the words.
 LOG_DISAGREE_SENT=You have sent an disagreement for the words.
 LOG_AGREEMENT_PERIOD_START=Please, make sure you agree with your opponent's words.
 LOG_AGREEMENT_PERIOD_FINISH_ACCEPTED=The agreement period has ended and the words were accepted.
 LOG_AGREEMENT_PERIOD_FINISH_REJECTED=The agreement period has ended and the words were rejected.
 LOG_DISAGREE_RECEIVED=At least one player does not agree with your words. Please, review it or use chat.
+LOG_CONTEST_PERIOD_START=Your words were rejected. Now you can accept or contest the rejection.
+LOG_CONTEST_ACCEPT_SENT=You have sent an acceptance for the rejection.
+LOG_CONTEST_REJECT_SENT=You have sent a contest for the rejection.
+LOG_AUTO_REJECTED_BY_INVALID_LETTERS=Your turn was automatically rejected since you put invalid letters sequence.
+LOG_RECEIVED_CONTEST_RESPONSE_ACCEPT=The current player accepted the rejection of the words.
+LOG_RECEIVED_CONTEST_RESPONSE_REJECT=The current player contested the rejection of the words.
 LOG_GAME_OVER=Game over.
 LOG_RESTART_GAME=The server is preparing a new game.
 
 RULES_CAPTION=Game Rules
 RULES_GRID_SIZE=Table size:
 RULES_DICTIONARY=Letters dictionary:
-RULES_INITIAL_LETTERS=Initial letters pocket:
-RULES_REBUY_LETTERS=Rebuy letters:
+RULES_HAND_LETTERS=Letters in hand:
+RULES_GOAL_SCORE=Goal score:
+RULES_TURN_TIMEOUT_FLAG=Player turn time-out
+RULES_TURN_TIMEOUT_SECS=Turn timeout (sec):
+RULES_AGREEMENT_TIMEOUT_SECS=Agreement timeout (sec):
 
 RULES_MSG_BLANK_FIELD=Please, specify the mandatory setting.
 

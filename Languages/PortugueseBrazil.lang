@@ -2,38 +2,42 @@ TITLE_VERSION=Versão %s
 TITLE_MODE=Modo:
 TITLE_PLAYER=Jogador:
 TITLE_RULES=Regras:
+TITLE_RESTART=Reiniciar
 
 MODE_SERVER=Servidor
 MODE_CLIENT=Cliente
 
-TITLE_RULES_DEFINITION=Dicionário: %s / Tamanho: %d x %d / Letras início: %d / Compra: %d
+TITLE_RULES_DEFINITION=Dicionário: %s / Tamanho: %d x %d / Letras: %d / Objetivo: %d / Tempo: %d+%d seg
 
 DLG_OK=OK
 DLG_CANCEL=Cancelar
 
 MSG_CLOSE_APP=<b><fc:clRed>Existe uma conexão estabelecida.</fc></b><br><br>Tem certeza de que deseja sair?
 MSG_KILL_PLAYER=Tem certeza de que deseja eliminar o jogador selecionado?
+MSG_STOP_GAME=<b>Tem certeza de que deseja parar o jogo?</b>
+MSG_RESTART_GAME=<b>Tem certeza de que deseja reiniciar o jogo?</b>
 
 CONN_REJECT_VERSION_WRONG=Esta versão é incompatível com o servidor!
 CONN_REJECT_PASSWORD_WRONG=A senha do jogo está incorreta.
+CONN_REJECT_NOT_FREEZED=O jogo não está no status de aguardo de reconexões.
 CONN_REJECT_HASH_WRONG=Seu jogador não foi encontrado com o código informado.
 CONN_REJECT_ALREADY_CONNECTED=Já existe uma conexão estabelecida para este jogador.
 CONN_REJECT_ALREADY_RUNNING=Você não pode ser juntar a este jogo pois ele já está em curso!
 CONN_REJECT_ALREADY_PLAYER_NAME=Este nome de jogador já existe!
 
 SETTINGS_CAPTION=Configurações
-SETTINGS_LANGUAGE=Linguagem:
 SETTINGS_SOUNDS=Habilitar Sons
 SETTINGS_ZOOM=Zoom da tabela:
 SETTINGS_LOG_FONT_SIZE=Tamanho da fonte do log:
 
-START_CAPTION=Bem-vindo ao Scrabble
+START_CAPTION=Bem-vindo ao Crosswords
 START_NAME=Seu nome:
 START_HASH=Código:
 START_OPERATION=Modo de operação
 START_RECONNECT=Reconectar
 START_SERVER_ADDR=Endereço do servidor:
 START_CONN_PASSWORD=Senha de conexão:
+START_LANGUAGE=Linguagem:
 
 START_MSG_BLANK_NAME=Por favor, digite seu nome.
 START_MSG_BLANK_HASH=Por favor, digite o código para reconexão.
@@ -49,10 +53,11 @@ LOG_LOGIN_ACCEPTED=Login aceito.
 LOG_LOGIN_REJECTED=Login rejeitado: %s
 LOG_PREPARING_GAME_SERVER=Por favor, aguarde todos os jogadores se conectarem e então clique em "Iniciar Jogo".
 LOG_PREPARING_GAME_CLIENT=Por favor, aguarde o servidor iniciar o jogo. Enquanto isso você pode utilizar o chat.
+LOG_RECONECTED_GAME_CLIENT=Você retornou ao jogo. Aguarde o servidor dar continuidade.
 LOG_PLAYER_JOIN=Jogador %s entrou.
 LOG_PLAYER_LEFT=Jogador %s saiu.
 LOG_WAIT_VALIDATION=Por favor, aguarde enquanto seus oponentes validam suas palavras.
-LOG_REBUY=Você comprou mais %d letra(s) já que não preencheu nada nesta rodada.
+LOG_LETTERS_EXCHANGED=Suas letras foram todas trocadas já que você não preencheu nada nesta rodada.
 LOG_WORDS_ACCEPTED=Suas palavras foram aceitas e a sua vez terminou.
 LOG_RULES_CHANGED=As regras do jogo foram modificadas pelo servidor.
 
@@ -62,9 +67,21 @@ LOG_DROP_CONTINUE=A situação dos jogadores perdidos foi resolvida e o jogo ir�
 START_BTN_JOIN=Iniciar
 START_BTN_EXIT=Sair
 
-GAME_BOX_PLAYERS=Jogadores
+GAME_STATUS_PREPARING=Sala de espera
+GAME_STATUS_PLAYING=Jogo em curso
+GAME_STATUS_MYTURN=Sua vez
+GAME_STATUS_WAITVALID=Aguardando validação
+GAME_STATUS_AGREEMENT=Período de validação
+GAME_STATUS_CONTEST=Período de contestação
+GAME_STATUS_PAUSED=Jogo pausado
+GAME_STATUS_GAMEOVER=Fim de jogo
+
+GAME_GRID_POSITION=Linha %d / Coluna %d
+GAME_HEADER_PLAYER=Jogador
+GAME_HEADER_SCORE=Pontos
 GAME_BOX_LETTERS=Letras
 GAME_BOX_CHAT=Chat
+GAME_TIMER=Tempo restante: %d segundo(s)
 
 GAME_BTN_RESTART=Novo Jogo
 GAME_BTN_START=Iniciar Jogo
@@ -72,26 +89,38 @@ GAME_BTN_RULES=Regras do Jogo
 GAME_BTN_DONE=Pronto
 GAME_BTN_AGREE=Eu concordo
 GAME_BTN_DISAGREE=Eu discordo
+GAME_BTN_CONTEST_ACCEPT=Aceito
+GAME_BTN_CONTEST_REJECT=Contesto
 
 GAME_MSG_START_WITH_NOBODY=Precisamos pelo menos de dois jogadores para começar o jogo!
 GAME_MSG_CHAT_WITH_NOBODY=Não há outros jogadores para conversar!
 
 LOG_GAME_STARTED=Se prepare. Começando o jogo agora!
 LOG_YOUR_TURN=Vai, é a sua vez!
+LOG_TURN_TIMEOUT=O seu tempo acabou.
 LOG_AGREE_SENT=Você enviou uma concordância com as palavras.
 LOG_DISAGREE_SENT=Você enviou uma discordância com as palavras.
 LOG_AGREEMENT_PERIOD_START=Por favor, verifique se você concorda com as palavras de seu oponente.
 LOG_AGREEMENT_PERIOD_FINISH_ACCEPTED=O período de concordância terminou e as palavras foram aceitas.
 LOG_AGREEMENT_PERIOD_FINISH_REJECTED=O período de concordância terminou e as palavras foram rejeitadas.
 LOG_DISAGREE_RECEIVED=Pelo menos um jogador não concorda com suas palavras. Por favor, revise-as ou use o chat para argumentar.
+LOG_CONTEST_PERIOD_START=Suas palavras foram rejeitadas. Agora você pode aceitar ou contestar a rejeição.
+LOG_CONTEST_ACCEPT_SENT=Você aceitou a rejeição de suas palavras.
+LOG_CONTEST_REJECT_SENT=Você contestou a rejeição de suas palavras.
+LOG_AUTO_REJECTED_BY_INVALID_LETTERS=Sua jogada foi automaticamente rejeitada pois você colocou uma sequência inválida de letras.
+LOG_RECEIVED_CONTEST_RESPONSE_ACCEPT=O jogador atual aceitou a rejeição das palavras.
+LOG_RECEIVED_CONTEST_RESPONSE_REJECT=O jogador atual contestou a rejeição das palavras.
 LOG_GAME_OVER=Fim do jogo.
 LOG_RESTART_GAME=O servidor está preparando um novo jogo.
 
 RULES_CAPTION=Regras do Jogo
 RULES_GRID_SIZE=Tamanho da tabela:
 RULES_DICTIONARY=Dicionário de letras:
-RULES_INITIAL_LETTERS=Letras iniciais:
-RULES_REBUY_LETTERS=Letras de compra:
+RULES_HAND_LETTERS=Letras na mão:
+RULES_GOAL_SCORE=Pontuação vencedora:
+RULES_TURN_TIMEOUT_FLAG=Tempo limite para jogada
+RULES_TURN_TIMEOUT_SECS=Tempo da jogada (seg):
+RULES_AGREEMENT_TIMEOUT_SECS=Tempo da avaliação (seg):
 
 RULES_MSG_BLANK_FIELD=Por favor, especifique a configuração obrigatória.
 

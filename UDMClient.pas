@@ -29,6 +29,7 @@ type
   public
     procedure SendLetter(X, Y: Integer; const Letter: Char);
     procedure SendAgreement(Agree: Boolean);
+    procedure SendContest(Accept: Boolean);
   end;
 
 var
@@ -40,8 +41,9 @@ implementation
 
 {$R *.dfm}
 
-uses UVars, UFrmGame, UFrmLog, UFrmStart, UFrmMain, System.SysUtils, UDMServer,
-  ULanguage;
+uses UVars, ULanguage, UDMServer,
+  UFrmMain, UFrmStart, UFrmGame, UFrmLog,
+  System.SysUtils, System.StrUtils;
 
 procedure TDMClient.DataModuleCreate(Sender: TObject);
 begin
@@ -60,6 +62,7 @@ begin
 
   if pubModeServer then DMServer.S.Close; //turn off server
 
+  FrmGame.Timer.Enabled := False;
   FrmGame.Hide;
 
   FrmMain.BoxConInfo.Visible := False;
@@ -100,17 +103,21 @@ begin
     pubPlayerName := D[0];
     FrmStart.EdHash.Text := D[1]; //auto-set for use when disconnect
 
-    FrmMain.ClientRules.Received := False;
-    FrmMain.UpdateConnectionBox;
+    FrmMain.LbMode.Caption := Lang.Get(IfThen(pubModeServer, 'MODE_SERVER', 'MODE_CLIENT'));
+    FrmMain.LbPlayer.Caption := pubPlayerName;
+    FrmMain.LbRules.Caption := string.Empty;
     FrmMain.BoxConInfo.Visible := True;
 
-    FrmGame.Initialize;
+    FrmGame.Initialize(FrmStart.BoxReconnect.Visible);
     FrmGame.Show;
 
     if pubModeServer then
       Log(Lang.Get('LOG_PREPARING_GAME_SERVER'))
     else
-      Log(Lang.Get('LOG_PREPARING_GAME_CLIENT'));
+      if FrmStart.BoxReconnect.Visible then
+        Log(Lang.Get('LOG_RECONECTED_GAME_CLIENT'))
+      else
+        Log(Lang.Get('LOG_PREPARING_GAME_CLIENT'));
   end else
   begin
     Log(Format(Lang.Get('LOG_LOGIN_REJECTED'), [Lang.Get('CONN_REJECT_'+Data)]));
@@ -130,50 +137,47 @@ begin
     'R': FrmGame.GameStartedReceived;
     'X': FrmGame.MatrixReceived(A);
     '>': FrmGame.InitMyTurn;
+    '~': FrmGame.MyTurnTimeoutReceived;
     'G': FrmGame.AgreementRequestReceived;
     'K': FrmGame.AgreementFinishReceived(A);
-    'J': FrmGame.DisagreeReceived;
-    'W': begin
-           Log(Lang.Get('LOG_WAIT_VALIDATION'));
-           //DoSound('WAIT');
-         end;
-    'B': begin
-           Log(Format(Lang.Get('LOG_REBUY'), [A.ToInteger]));
-           DoSound('BUY');
-         end;
-    'F': begin
-           Log(Lang.Get('LOG_WORDS_ACCEPTED'));
-           DoSound('DONE');
-         end;
+    'W': FrmGame.WaitValidationReceived;
+    'F': FrmGame.ValidationAcceptedReceived;
+    'J': FrmGame.ValidationRejectedReceived;
+    'O': FrmGame.OpenContestPeriodReceived;
+    'B': FrmGame.LettersExchangedReceived;
     'E': FrmGame.GameOverReceived;
     'P': FrmGame.ReceivedPreparingNewGame;
     '?': FrmGame.ReceivedPausedByDrop;
-    '/': Log(Lang.Get('LOG_DROP_CONTINUE'));
+    '/': FrmGame.ReceivedDropContinue;
+    ':': FrmGame.ReceivedTimerStart(A);
+    '.': FrmGame.ReceivedTimerStop;
+    '&': FrmGame.ReceivedAutoRejectedByInvalidLetters;
+    'Q': FrmGame.ReceivedContestResponse(A);
   end;
 end;
 
 procedure TDMClient.RulesReceived(const A: string; ToOne: Boolean);
 var
   D: TMsgArray;
+  Dictionary: string;
+  SizeW, SizeH, HandLetters, GoalScore, TurnTimeout, AgreementTimeout: Integer;
 begin
   D := DataToArray(A);
 
-  with FrmMain.ClientRules do
-  begin
-    Dictionary := D[0];
-    SizeW := D[1];
-    SizeH := D[2];
-    InitialLetters := D[3];
-    RebuyLetters := D[4];
+  Dictionary := D[0];
+  SizeW := D[1];
+  SizeH := D[2];
+  HandLetters := D[3];
+  GoalScore := D[4];
+  TurnTimeout := D[5];
+  AgreementTimeout := D[6];
 
-    Received := True;
-  end;
+  FrmMain.LbRules.Caption :=
+    Format(Lang.Get('TITLE_RULES_DEFINITION'), [
+      Dictionary, SizeW, SizeH, HandLetters, GoalScore, TurnTimeout, AgreementTimeout]);
 
-  FrmMain.UpdateConnectionBox;
-
-  FrmGame.PB.SetMatrixSize(
-    FrmMain.ClientRules.SizeH,
-    FrmMain.ClientRules.SizeW);
+  FrmGame.LbPosition.Caption := string.Empty;
+  FrmGame.PB.SetMatrixSize(SizeH, SizeW);
 
   if not ToOne then
     Log(Lang.Get('LOG_RULES_CHANGED'));
@@ -185,7 +189,7 @@ var
   D: TMsgArray;
 begin
   D := DataToArray(A);
-  FrmGame.ChatLog(D[0], D[1]);
+  FrmGame.ChatLog(D[0], D[1], True);
 
   DoSound('PLING');
 end;
@@ -219,6 +223,11 @@ end;
 procedure TDMClient.SendAgreement(Agree: Boolean);
 begin
   C.Send('H', ArrayToData([Agree]));
+end;
+
+procedure TDMClient.SendContest(Accept: Boolean);
+begin
+  C.Send('Y', ArrayToData([Accept]));
 end;
 
 end.

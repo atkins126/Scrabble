@@ -2,7 +2,7 @@ unit UFrmRules;
 
 interface
 
-uses Vcl.Forms, Vcl.StdCtrls, Vcl.Controls, System.Classes, Vcl.ExtCtrls;
+uses Vcl.Forms, Vcl.StdCtrls, Vcl.Controls, Vcl.ExtCtrls, System.Classes;
 
 type
   TFrmRules = class(TForm)
@@ -12,13 +12,18 @@ type
     EdSizeH: TEdit;
     LbDictionary: TLabel;
     EdDictionary: TComboBox;
-    LbInitialLetters: TLabel;
-    EdInitialLetters: TEdit;
-    LbRebuyLetters: TLabel;
-    EdRebuyLetters: TEdit;
+    LbHandLetters: TLabel;
+    EdHandLetters: TEdit;
     BtnOK: TButton;
     BtnCancel: TButton;
     Bevel1: TBevel;
+    CkTurnTimeout: TCheckBox;
+    LbTurnTimeoutSecs: TLabel;
+    EdTurnTimeoutSecs: TEdit;
+    LbGoalScore: TLabel;
+    EdGoalScore: TEdit;
+    EdAgreementTimeoutSecs: TEdit;
+    LbAgreementTimeoutSecs: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure BtnOKClick(Sender: TObject);
   private
@@ -40,7 +45,8 @@ implementation
 
 {$R *.dfm}
 
-uses UVars, System.SysUtils, UDams, UDMServer, System.IniFiles, ULanguage;
+uses UVars, UDams, UDictionary, ULanguage, UDMServer,
+  System.SysUtils, System.IniFiles;
 
 class procedure TRules.Load;
 var
@@ -51,8 +57,11 @@ begin
     pubServerProps.SizeW := Ini.ReadInteger('Rules', 'SizeW', 30);
     pubServerProps.SizeH := Ini.ReadInteger('Rules', 'SizeH', 20);
     pubServerProps.DictionaryID := Ini.ReadString('Rules', 'DictionaryID', 'EN');
-    pubServerProps.InitialLetters := Ini.ReadInteger('Rules', 'InitialLetters', 10);
-    pubServerProps.RebuyLetters := Ini.ReadInteger('Rules', 'RebuyLetters', 5);
+    pubServerProps.HandLetters := Ini.ReadInteger('Rules', 'HandLetters', 7);
+    pubServerProps.GoalScore := Ini.ReadInteger('Rules', 'GoalScore', 50);
+    pubServerProps.TurnTimeout := Ini.ReadBool('Rules', 'TurnTimeout', False);
+    pubServerProps.TurnTimeoutSecs := Ini.ReadInteger('Rules', 'TurnTimeoutSecs', 60);
+    pubServerProps.AgreementTimeoutSecs := Ini.ReadInteger('Rules', 'AgreementTimeoutSecs', 10);
   finally
     Ini.Free;
   end;
@@ -67,8 +76,11 @@ begin
     Ini.WriteInteger('Rules', 'SizeW', StrToInt(F.EdSizeW.Text));
     Ini.WriteInteger('Rules', 'SizeH', StrToInt(F.EdSizeH.Text));
     Ini.WriteString('Rules', 'DictionaryID', LST_DICTIONARY[F.EdDictionary.ItemIndex].ID);
-    Ini.WriteInteger('Rules', 'InitialLetters', StrToInt(F.EdInitialLetters.Text));
-    Ini.WriteInteger('Rules', 'RebuyLetters', StrToInt(F.EdRebuyLetters.Text));
+    Ini.WriteInteger('Rules', 'HandLetters', StrToInt(F.EdHandLetters.Text));
+    Ini.WriteInteger('Rules', 'GoalScore', StrToInt(F.EdGoalScore.Text));
+    Ini.WriteBool('Rules', 'TurnTimeout', F.CkTurnTimeout.Checked);
+    Ini.WriteInteger('Rules', 'TurnTimeoutSecs', StrToInt(F.EdTurnTimeoutSecs.Text));
+    Ini.WriteInteger('Rules', 'AgreementTimeoutSecs', StrToInt(F.EdAgreementTimeoutSecs.Text));
   finally
     Ini.Free;
   end;
@@ -93,8 +105,11 @@ begin
   Caption := Lang.Get('RULES_CAPTION');
   LbTableSize.Caption := Lang.Get('RULES_GRID_SIZE');
   LbDictionary.Caption := Lang.Get('RULES_DICTIONARY');
-  LbInitialLetters.Caption := Lang.Get('RULES_INITIAL_LETTERS');
-  LbRebuyLetters.Caption := Lang.Get('RULES_REBUY_LETTERS');
+  LbHandLetters.Caption := Lang.Get('RULES_HAND_LETTERS');
+  LbGoalScore.Caption := Lang.Get('RULES_GOAL_SCORE');
+  CkTurnTimeout.Caption := Lang.Get('RULES_TURN_TIMEOUT_FLAG');
+  LbTurnTimeoutSecs.Caption := Lang.Get('RULES_TURN_TIMEOUT_SECS');
+  LbAgreementTimeoutSecs.Caption := Lang.Get('RULES_AGREEMENT_TIMEOUT_SECS');
 
   BtnOK.Caption := Lang.Get('DLG_OK');
   BtnCancel.Caption := Lang.Get('DLG_CANCEL');
@@ -105,8 +120,11 @@ begin
   EdSizeW.Text := IntToStr(pubServerProps.SizeW);
   EdSizeH.Text := IntToStr(pubServerProps.SizeH);
   EdDictionary.ItemIndex := GetCurrentDictionaryIndex;
-  EdInitialLetters.Text := IntToStr(pubServerProps.InitialLetters);
-  EdRebuyLetters.Text := IntToStr(pubServerProps.RebuyLetters);
+  EdHandLetters.Text := IntToStr(pubServerProps.HandLetters);
+  EdGoalScore.Text := IntToStr(pubServerProps.GoalScore);
+  CkTurnTimeout.Checked := pubServerProps.TurnTimeout;
+  EdTurnTimeoutSecs.Text := IntToStr(pubServerProps.TurnTimeoutSecs);
+  EdAgreementTimeoutSecs.Text := IntToStr(pubServerProps.AgreementTimeoutSecs);
 end;
 
 procedure TFrmRules.LoadDictionaryList;
@@ -117,19 +135,20 @@ begin
 end;
 
 procedure TFrmRules.BtnOKClick(Sender: TObject);
+
+  procedure CheckIntField(Ed: TEdit);
+  begin
+    if StrToIntDef(Ed.Text, 0) = 0 then
+    begin
+      MsgError(Lang.Get('RULES_MSG_BLANK_FIELD'));
+      Ed.SetFocus;
+      Exit;
+    end;
+  end;
+
 begin
-  if StrToIntDef(EdSizeW.Text, 0) = 0 then
-  begin
-    MsgError(Lang.Get('RULES_MSG_BLANK_FIELD'));
-    EdSizeW.SetFocus;
-    Exit;
-  end;
-  if StrToIntDef(EdSizeH.Text, 0) = 0 then
-  begin
-    MsgError(Lang.Get('RULES_MSG_BLANK_FIELD'));
-    EdSizeH.SetFocus;
-    Exit;
-  end;
+  CheckIntField(EdSizeW);
+  CheckIntField(EdSizeH);
 
   if EdDictionary.ItemIndex = -1 then
   begin
@@ -138,17 +157,13 @@ begin
     Exit;
   end;
 
-  if StrToIntDef(EdInitialLetters.Text, 0) = 0 then
+  CheckIntField(EdHandLetters);
+  CheckIntField(EdGoalScore);
+
+  if CkTurnTimeout.Checked then
   begin
-    MsgError(Lang.Get('RULES_MSG_BLANK_FIELD'));
-    EdInitialLetters.SetFocus;
-    Exit;
-  end;
-  if StrToIntDef(EdRebuyLetters.Text, 0) = 0 then
-  begin
-    MsgError(Lang.Get('RULES_MSG_BLANK_FIELD'));
-    EdRebuyLetters.SetFocus;
-    Exit;
+    CheckIntField(EdTurnTimeoutSecs);
+    CheckIntField(EdAgreementTimeoutSecs);
   end;
 
   //
